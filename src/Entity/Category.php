@@ -9,12 +9,15 @@ use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
 #[ApiResource(
     operations: [new GetCollection(normalizationContext: ['groups' => ['VideoGame:read']]),
-    new Get(normalizationContext: ['groups' => ['VideoGame:read']])]
+    new Get(normalizationContext: ['groups' => ['VideoGame:read']])],
+    normalizationContext: ['groups' => ['read']],
+    denormalizationContext: ['groups' => ['write']]
 )]
 class Category
 {
@@ -26,6 +29,7 @@ class Category
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'The name is required')]
     #[Assert\Length(max: 255, maxMessage: 'The name must not exceed 255 characters')]
+    #[Groups(['read', 'write'])]
     private ?string $name = null;
 
     /**

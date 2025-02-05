@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class CategoryController extends AbstractController
@@ -21,12 +22,12 @@ class CategoryController extends AbstractController
     {
         $categories = $categoryRepository->findAll();
 
-        // var_dump($categories);die;
+        // var_dump($categories[0]->getName());die;
         
         return $this->json($categories, Response::HTTP_OK, [], ['groups' => 'category:read']);
     }
 
-    #[Route('api/v1/categories/{id}', name: 'app_category_show', methods: ['GET'])]
+    #[Route('api/v1/categories/{id}', name: 'app_category_show', requirements:['id' => Requirement::DIGITS], methods: ['GET'])]
     public function getCategory(Category $category, CategoryRepository $categoryRepository): JsonResponse
     {
         if (!$category) {
