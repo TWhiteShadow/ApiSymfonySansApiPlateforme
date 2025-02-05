@@ -20,5 +20,9 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\DataFixtures\AppFixtures:
+        arguments:
+            $passwordHasher: '@security.user_password_hasher'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
