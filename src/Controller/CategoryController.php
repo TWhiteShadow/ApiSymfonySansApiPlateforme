@@ -2,27 +2,30 @@
 
 namespace App\Controller;
 
-use ApiPlatform\Metadata\UrlGeneratorInterface;
 use App\Entity\Category;
 use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+#[OA\Tag(name: 'Category')]
 class CategoryController extends AbstractController
 {
     #[Route('api/v1/categories', name: 'app_category', methods: ['GET'])]
     public function getCategories(CategoryRepository $categoryRepository): JsonResponse
     {
         $categories = $categoryRepository->findAll();
-
-        // var_dump($categories[0]->getName());die;
         
         return $this->json($categories, Response::HTTP_OK, [], ['groups' => 'category:read']);
     }
@@ -38,34 +41,48 @@ class CategoryController extends AbstractController
     }
 
     #[Route('api/v1/categories', name: 'app_category_create', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
     public function createCategory(
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $em,
-        UrlGeneratorInterface $urlGenerator
+        ValidatorInterface $validator
     ): JsonResponse {
 
         $category = $serializer->deserialize($request->getContent(), Category::class, 'json');
+
+        $errors = $validator->validate($category);
+        if (count($errors) > 0) {
+            return $this->json($errors, Response::HTTP_BAD_REQUEST);
+        }
         $em->persist($category);
         $em->flush();
 
-        $location = $urlGenerator->generate(    
-            'app_category_show',
-            ['id' => $category->getId()],
-            UrlGeneratorInterface::ABSOLUTE_URL
-        );
-
-        return $this->json(['message' => 'Category created', 'location' => $location], Response::HTTP_CREATED);
+        return $this->json(['Data' => $category], Response::HTTP_CREATED);
     }
 
-
     #[Route('api/v1/categories/{id}', name: 'app_category_update', methods: ['PUT'])]
-    public function updateCategory(Category $category, CategoryRepository $categoryRepository): JsonResponse
+    #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
+    public function updateCategory(Request $request, Category $Category, SerializerInterface $serializerInterface, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
-        return $this->json(['message' => 'Category updated'], Response::HTTP_OK);
+        $category = $serializerInterface->deserialize($request->getContent(), Category::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $Category]);
+        
+        $errors = $validator->validate($category);
+        if (count($errors) > 0) {
+            return $this->json($errors, Response::HTTP_BAD_REQUEST);
+        }
+        // var_dump($errors);die;
+        
+        $em->persist($category);
+        $em->flush();
+
+        $location = $urlGenerator->generate('app_category', ['id' => $category->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return $this->json($category, Response::HTTP_OK, ['Location' => $location], ['groups' => 'category:read']);
     }
 
     #[Route('api/v1/categories/{id}', name: 'app_category_delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
     public function deleteCategory(Category $category, CategoryRepository $categoryRepository, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($category);

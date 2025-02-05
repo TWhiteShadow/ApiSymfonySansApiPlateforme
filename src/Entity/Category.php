@@ -2,9 +2,6 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
 use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -13,28 +10,25 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
-#[ApiResource(
-    operations: [new GetCollection(normalizationContext: ['groups' => ['VideoGame:read']]),
-    new Get(normalizationContext: ['groups' => ['VideoGame:read']])],
-    normalizationContext: ['groups' => ['read']],
-    denormalizationContext: ['groups' => ['write']]
-)]
+
 class Category
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['category:read', 'category:write', 'video_game:read'])] 
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'The name is required')]
     #[Assert\Length(max: 255, maxMessage: 'The name must not exceed 255 characters')]
-    #[Groups(['read', 'write'])]
+    #[Groups(['category:read', 'category:write', 'video_game:read'])]
     private ?string $name = null;
 
     /**
      * @var Collection<int, VideoGame>
      */
+
     #[ORM\ManyToMany(targetEntity: VideoGame::class, mappedBy: 'category')]
     private Collection $videoGames;
 

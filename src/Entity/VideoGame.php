@@ -10,36 +10,43 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: VideoGameRepository::class)]
-#[ApiResource(
-    operations: [new GetCollection(normalizationContext: ['groups' => ['VideoGame:read']]),
-    new Get(normalizationContext: ['groups' => ['VideoGame:read']])]
-)]
+// #[ApiResource(
+//     operations: [new GetCollection(normalizationContext: ['groups' => ['VideoGame:read']]),
+//     new Get(normalizationContext: ['groups' => ['VideoGame:read']])]
+// )]
 class VideoGame
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['video_game:read', 'video_game:write'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['video_game:read', 'video_game:write'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['video_game:read', 'video_game:write'])]
     private ?\DateTimeInterface $releaseDate = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['video_game:read', 'video_game:write'])]
     private ?string $description = null;
 
     /**
      * @var Collection<int, Category>
      */
+    #[Groups(['video_game:read', 'video_game:write'])]
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'videoGames')]
     private Collection $category;
 
     #[ORM\ManyToOne(inversedBy: 'videoGames')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['video_game:read', 'video_game:write'])]
     private ?Editor $Editor = null;
 
     public function __construct()
