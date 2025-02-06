@@ -37,6 +37,7 @@ class Editor
      * @var Collection<int, VideoGame>
      */
     #[ORM\OneToMany(targetEntity: VideoGame::class, mappedBy: 'Editor', orphanRemoval: true)]
+    #[Groups(['editor:read', 'editor:write'])]
     private Collection $videoGames;
 
     public function __construct()

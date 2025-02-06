@@ -6,6 +6,7 @@ use App\Entity\Category;
 use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -23,6 +24,15 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class CategoryController extends AbstractController
 {
     #[Route('api/v1/categories', name: 'app_category', methods: ['GET'])]
+    
+    #[OA\Response(
+        response: 200,
+        description: 'Return the list of categories',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: Category::class, groups: ['category:read']))
+        )
+    )]
     public function getCategories(CategoryRepository $categoryRepository): JsonResponse
     {
         $categories = $categoryRepository->findAll();
@@ -31,6 +41,19 @@ class CategoryController extends AbstractController
     }
 
     #[Route('api/v1/categories/{id}', name: 'app_category_show', requirements:['id' => Requirement::DIGITS], methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Returns a category',
+        content: new Model(type: Category::class, groups: ['category:read']
+        )
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        description: "The id of the category.",
+        schema: new OA\Schema(type: "string"),
+        required: true
+    )]
     public function getCategory(Category $category, CategoryRepository $categoryRepository): JsonResponse
     {
         if (!$category) {
@@ -42,6 +65,30 @@ class CategoryController extends AbstractController
 
     #[Route('api/v1/categories', name: 'app_category_create', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
+    #[OA\Response(
+        response: 201,
+        description: 'Category created',
+        content: new Model(type: Category::class, groups: ['category:read'])
+    )]
+    #[OA\RequestBody(
+        description: 'Category data',
+        required: true,
+        content: new OA\JsonContent(
+            type: 'object',
+            ref: new Model(type: Category::class, groups: ['category:write'])
+        )
+    )]
+    #[OA\Post(
+        description: "Create a new category",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "Action"),
+                ]
+            )
+        )
+    )]
     public function createCategory(
         Request $request,
         SerializerInterface $serializer,
@@ -63,6 +110,18 @@ class CategoryController extends AbstractController
 
     #[Route('api/v1/categories/{id}', name: 'app_category_update', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        description: "The id of the category.",
+        schema: new OA\Schema(type: "string"),
+        required: true
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Category updated',
+        content: new Model(type: Category::class, groups: ['category:read'])
+    )]
     public function updateCategory(Request $request, Category $Category, SerializerInterface $serializerInterface, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
         $category = $serializerInterface->deserialize($request->getContent(), Category::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $Category]);
@@ -83,6 +142,17 @@ class CategoryController extends AbstractController
 
     #[Route('api/v1/categories/{id}', name: 'app_category_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        description: "The id of the category.",
+        schema: new OA\Schema(type: "string"),
+        required: true
+    )]
+    #[OA\Response(
+        response: 204,
+        description: 'Category deleted'
+    )]
     public function deleteCategory(Category $category, CategoryRepository $categoryRepository, EntityManagerInterface $em): JsonResponse
     {
         $em->remove($category);

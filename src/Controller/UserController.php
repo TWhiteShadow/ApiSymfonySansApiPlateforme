@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,14 @@ class UserController extends AbstractController
 {
     #[Route('api/v1/users', name: 'app_user', methods: ['GET'])]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, only administrators can view user list')]
+    #[OA\Response(
+        response: 200,
+        description: 'Return the list of users',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: User::class, groups: ['user:read']))
+        )
+    )]
     public function getUsers(UserRepository $userRepository): JsonResponse
     {
         $users = $userRepository->findAll();
@@ -35,9 +44,30 @@ class UserController extends AbstractController
     }
 
     #[Route('api/v1/users/{id}', name: 'app_user_show', requirements:['id' => Requirement::DIGITS], methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Returns a user',
+        content: new Model(type: User::class, groups: ['user:read'])
+    )]
+    #[OA\Response(
+        response: 403,
+        description: 'Access denied',
+        content: new OA\JsonContent(
+            type: 'object',
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Access denied')
+            ]
+        )
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        description: "The id of the user",
+        schema: new OA\Schema(type: "string"),
+        required: true
+    )]
     public function showUser(User $user): JsonResponse
     {
-        // Check if the current user is trying to access their own data or is an admin
         if ($this->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['message' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
@@ -50,6 +80,32 @@ class UserController extends AbstractController
 
     #[Route('api/v1/users', name: 'app_user_create', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, only administrators can create new users')]
+    #[OA\Response(
+        response: 201,
+        description: 'User created',
+        content: new Model(type: User::class, groups: ['user:read'])
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Invalid input',
+        content: new OA\JsonContent(
+            type: 'object',
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Validation failed')
+            ]
+        )
+    )]
+    #[OA\RequestBody(
+        description: 'User data',
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "email", type: "string", example: "user@example.com"),
+                new OA\Property(property: "password", type: "string", example: "password123"),
+                new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string"), example: ["ROLE_USER"])
+            ]
+        )
+    )]
     public function createUser(
         Request $request,
         SerializerInterface $serializer,
@@ -66,7 +122,6 @@ class UserController extends AbstractController
                 return $this->json($errors, Response::HTTP_BAD_REQUEST);
             }
 
-            // Hash the password before saving
             $hashedPassword = $passwordHasher->hashPassword(
                 $user,
                 $user->getPassword()
@@ -91,6 +146,39 @@ class UserController extends AbstractController
     }
 
     #[Route('api/v1/users/{id}', name: 'app_user_update', methods: ['PUT'])]
+    #[OA\Response(
+        response: 200,
+        description: 'User updated',
+        content: new Model(type: User::class, groups: ['user:read'])
+    )]
+    #[OA\Response(
+        response: 403,
+        description: 'Access denied',
+        content: new OA\JsonContent(
+            type: 'object',
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Access denied')
+            ]
+        )
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        description: "The id of the user",
+        schema: new OA\Schema(type: "string"),
+        required: true
+    )]
+    #[OA\RequestBody(
+        description: 'User update data',
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "email", type: "string", example: "user@example.com"),
+                new OA\Property(property: "password", type: "string", example: "newpassword123"),
+                new OA\Property(property: "roles", type: "array", items: new OA\Items(type: "string"), example: ["ROLE_USER"])
+            ]
+        )
+    )]
     public function updateUser(
         Request $request,
         User $user,
@@ -99,7 +187,6 @@ class UserController extends AbstractController
         ValidatorInterface $validator,
         UserPasswordHasherInterface $passwordHasher
     ): JsonResponse {
-        // Check if the current user is trying to update their own data or is an admin
         if ($this->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['message' => 'Access denied'], Response::HTTP_FORBIDDEN);
         }
@@ -117,7 +204,6 @@ class UserController extends AbstractController
                 return $this->json($errors, Response::HTTP_BAD_REQUEST);
             }
 
-            // If password is being updated, hash it
             if ($request->get('password')) {
                 $hashedPassword = $passwordHasher->hashPassword(
                     $updatedUser,
@@ -126,9 +212,8 @@ class UserController extends AbstractController
                 $updatedUser->setPassword($hashedPassword);
             }
 
-            // Ensure non-admin users can't grant themselves admin privileges
             if (!$this->isGranted('ROLE_ADMIN')) {
-                $updatedUser->setRoles($user->getRoles()); // Restore original roles
+                $updatedUser->setRoles($user->getRoles());
             }
 
             $em->persist($updatedUser);
@@ -150,10 +235,30 @@ class UserController extends AbstractController
 
     #[Route('api/v1/users/{id}', name: 'app_user_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, only administrators can delete users')]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        description: "The id of the user",
+        schema: new OA\Schema(type: "string"),
+        required: true
+    )]
+    #[OA\Response(
+        response: 204,
+        description: 'User deleted'
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Cannot delete last admin',
+        content: new OA\JsonContent(
+            type: 'object',
+            properties: [
+                new OA\Property(property: 'message', type: 'string', example: 'Cannot delete the last admin user')
+            ]
+        )
+    )]
     public function deleteUser(User $user, EntityManagerInterface $em): JsonResponse
     {
         try {
-            // Prevent deletion of the last admin user
             if (in_array('ROLE_ADMIN', $user->getRoles())) {
                 $adminCount = $em->getRepository(User::class)->count(['roles' => 'ROLE_ADMIN']);
                 if ($adminCount <= 1) {

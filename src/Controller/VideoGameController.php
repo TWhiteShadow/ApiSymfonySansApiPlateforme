@@ -3,8 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\VideoGame;
+use App\Repository\CategoryRepository;
+use App\Repository\EditorRepository;
 use App\Repository\VideoGameRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -22,6 +25,14 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class VideoGameController extends AbstractController
 {
     #[Route('api/v1/video-games', name: 'app_video_game', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: VideoGame::class, groups: ['video_game:read']))
+        )
+    )]
     public function getVideoGames(VideoGameRepository $videoGameRepository): JsonResponse
     {
         $videoGames = $videoGameRepository->findAll();
@@ -45,11 +56,33 @@ class VideoGameController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $em,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        EditorRepository $editorRepository,
+        CategoryRepository $categoryRepository
     ): JsonResponse {
 
         $videoGame = $serializer->deserialize($request->getContent(), VideoGame::class, 'json');
-        // dd($videoGame);
+        $data  = json_decode($request->getContent(), true);
+        if(isset($data['Editor'])) {
+            $editorId = $data['Editor'];
+            $editor = $editorRepository->find($editorId);
+            if (!$editor) {
+                return $this->json(['error' => 'Editor not found'], Response::HTTP_NOT_FOUND);
+            }
+            $videoGame->setEditor($editor);
+        }
+
+        if(isset($data["Categories"])) {
+            $categories = $data["Categories"];
+            foreach ($categories as $category) {
+                $category = $categoryRepository->find($category);
+                if (!$category) {
+                    return $this->json(['error' => 'Category not found'], Response::HTTP_NOT_FOUND);
+                }
+                $videoGame->addCategory($category);
+            }
+        }
+
         $errors = $validator->validate($videoGame);
         if (count($errors) > 0) {
             return $this->json($errors, Response::HTTP_BAD_REQUEST);
@@ -57,7 +90,7 @@ class VideoGameController extends AbstractController
         $em->persist($videoGame);
         $em->flush();
 
-        return $this->json(['Data' => $videoGame], Response::HTTP_CREATED);
+        return $this->json(['Data' => $videoGame], Response::HTTP_CREATED, [], ['groups' => 'video_game:read']);
     }
 
     #[Route('api/v1/video-games/{id}', name: 'app_video_game_update', methods: ['PUT'])]

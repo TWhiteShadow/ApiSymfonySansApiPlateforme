@@ -1,20 +1,24 @@
 nelmio_api_doc:
-    documentation:
-        info:
-            title: 'ApiSymfonySansApiPlatform'
-            description: 'Documentation de l''ApiSymfonySansApiPlatform'
-            version: '1.0.0'
-        components:
-            securitySchemes:
-                Bearer:
-                    type: http
-                    scheme: bearer
-                    bearerFormat: JWT
-        tags:
-            - name: 'Editor'
-              description: 'Opérations sur les éditeurs'
-            - name: 'Games'
-              description: 'Opérations sur les jeux'
-    areas:
-      default:
-        path_patterns: ['/api/v1/*']
+  use_validation_groups: true
+  documentation:
+      info:
+          title: 'ApiSymfonySansApiPlatform'
+          description: 'Documentation de l''ApiSymfonySansApiPlatform'
+          version: '1.0.0'
+      components:
+          securitySchemes:
+              Bearer:
+                  type: http
+                  scheme: bearer
+                  bearerFormat: JWT
+      security:
+          - Bearer: []  
+          
+      tags:
+          - name: 'Editor'
+            description: 'Opérations sur les éditeurs'
+          - name: 'Games'
+            description: 'Opérations sur les jeux'
+  areas:
+    default:
+      path_patterns: ['/api/v1/*']
