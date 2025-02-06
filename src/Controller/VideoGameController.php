@@ -94,6 +94,15 @@ class VideoGameController extends AbstractController
     }
 
     #[Route('api/v1/video-games/{id}', name: 'app_video_game_update', methods: ['PUT'])]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(ref: new Model(type: VideoGame::class, groups: ['video_game:write']))
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Video game updated successfully',
+        content: new OA\JsonContent(ref: new Model(type: VideoGame::class, groups: ['video_game:read']))
+    )]
     #[IsGranted('ROLE_ADMIN', message: 'Access denied, you must be an admin to access this route')]
     public function updateVideoGame(Request $request, VideoGame $videoGame, SerializerInterface $serializerInterface, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
