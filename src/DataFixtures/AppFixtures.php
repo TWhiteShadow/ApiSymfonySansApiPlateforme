@@ -54,47 +54,53 @@ class AppFixtures extends Fixture
         $gameData = [
             [
                 'The Legend of Zelda: Breath of the Wild',
-                '2017-03-03',
+                '2025-03-03',
                 'An open-world action-adventure game',
                 $editors[0], // Nintendo
-                [$categories[0], $categories[1]] // Action, Adventure
+                [$categories[0], $categories[1]], // Action, Adventure
+                'botw.jpg'
             ],
             [
                 'FIFA 24',
-                '2023-09-29',
+                '2025-03-06',
                 'A football simulation game',
                 $editors[1], // EA
-                [$categories[4], $categories[5]] // Sports, Simulation
+                [$categories[4], $categories[5]], // Sports, Simulation
+                'fifa24.jpg'
             ],
             [
                 'Assassin\'s Creed Valhalla',
-                '2020-11-10',
+                '2025-03-10',
                 'An action role-playing game set in the Viking age',
                 $editors[2], // Ubisoft
-                [$categories[0], $categories[2]] // Action, RPG
+                [$categories[0], $categories[2]], // Action, RPG
+                'acv.jpg'
             ],
             [
                 'The Witcher 3: Wild Hunt',
-                '2015-05-19',
+                '2025-03-05',
                 'An open-world action role-playing game',
                 $editors[3], // CD Projekt Red
-                [$categories[0], $categories[2]] // Action, RPG
+                [$categories[0], $categories[2]], // Action, RPG
+                'tw3.jpg'
             ],
             [
                 'Final Fantasy XVI',
-                '2023-06-22',
+                '2025-03-02',
                 'An action role-playing game',
                 $editors[4], // Square Enix
-                [$categories[0], $categories[2]] // Action, RPG
+                [$categories[0], $categories[2]], // Action, RPG
+                'ffxvi.jpeg'
             ]
         ];
 
-        foreach ($gameData as [$title, $releaseDate, $description, $editor, $gameCategories]) {
+        foreach ($gameData as [$title, $releaseDate, $description, $editor, $gameCategories, $coverImage]) {
             $game = new VideoGame();
             $game->setTitle($title)
                  ->setReleaseDate(new \DateTime($releaseDate))
                  ->setDescription($description)
-                 ->setEditor($editor);
+                 ->setEditor($editor)
+                 ->setCoverImage($coverImage);
             
             foreach ($gameCategories as $category) {
                 $game->addCategory($category);
@@ -105,15 +111,16 @@ class AppFixtures extends Fixture
 
         // Create Users
         $userData = [
-            ['admin@example.com', ['ROLE_ADMIN'], 'adminpass'],
-            ['user@example.com', ['ROLE_USER'], 'userpass'],
-            ['moderator@example.com', ['ROLE_MODERATOR'], 'modpass']
+            ['admin@example.com', ['ROLE_ADMIN'], 'adminpass', 0],
+            ['user@example.com', ['ROLE_USER'], 'userpass', 1],
+            ['moderator@example.com', ['ROLE_MODERATOR'], 'modpass', 0]
         ];
 
-        foreach ($userData as [$email, $roles, $plainPassword]) {
+        foreach ($userData as [$email, $roles, $plainPassword, $subscribed]) {
             $user = new User();
             $user->setEmail($email);
             $user->setRoles($roles);
+            $user->setSubcriptionToNewsletter($subscribed);
             
             $hashedPassword = $this->passwordHasher->hashPassword(
                 $user,

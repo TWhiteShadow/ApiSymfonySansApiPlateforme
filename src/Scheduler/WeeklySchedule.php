@@ -2,19 +2,18 @@
 
 namespace App\Scheduler;
 
-use App\Message\SendEmailMessage;
 use Symfony\Component\Scheduler\Attribute\AsSchedule;
 use Symfony\Component\Scheduler\RecurringMessage;
 use Symfony\Component\Scheduler\Schedule;
 use Symfony\Component\Scheduler\ScheduleProviderInterface;
-use Symfony\Component\Mime\Message;
+use Symfony\Component\Console\Messenger\RunCommandMessage;
 use Symfony\Contracts\Cache\CacheInterface;
 
-#[AsSchedule('DailyMail')]
-final class MainSchedule implements ScheduleProviderInterface
+#[AsSchedule('WeeklyMail')]
+final class WeeklySchedule implements ScheduleProviderInterface
 {
     public function __construct(
-        private CacheInterface $cache,
+        private CacheInterface $cache
     ) {
     }
 
@@ -22,9 +21,8 @@ final class MainSchedule implements ScheduleProviderInterface
     {
         return (new Schedule())
             ->add(
-                // @TODO - Create a Message to schedule
-                RecurringMessage::cron('* * * * *', new SendEmailMessage()),
-                RecurringMessage::every('10 seconds', new SendEmailMessage()),
+                RecurringMessage::cron('30 8 * * 1', 
+                    new RunCommandMessage('app:send-weekly-videogames'))
             )
             ->stateful($this->cache)
         ;
