@@ -1,3 +1,5 @@
+![alt text](https://raw.githubusercontent.com/TWhiteShadow/ApiSymfonySansApiPlateforme/refs/heads/master/public/upload/images/Screenshot%202025-03-02%20at%2019-20-32%20Mailtrap%20-%20Email%20Delivery%20Platform.png)
+
 # 🎮 ApiSymfonySansApiPlateforme
 
 A Symfony API to fetch upcoming video games and send weekly updates to subscribed users!
