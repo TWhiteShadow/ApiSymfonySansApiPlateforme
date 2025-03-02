@@ -88,6 +88,14 @@ Use this token for authorization in all protected routes.
 | `/api/v1/editors` | Manage editors | `GET`, `POST`, `PUT`, `DELETE` |
 | `/api/v1/categories` | Manage categories | `GET`, `POST`, `PUT`, `DELETE` |
 
+## ✉️ Send Email Manually
+
+To manually send the weekly video game update email, use the following command:
+
+```sh
+php bin/console app:send-weekly-videogames
+```
+
 ## 🛠 Tools
 - 📝 **API Documentation:** Swagger/OpenAPI (`/api/docs`)
 - 🏎 **Run Locally:** `symfony serve`
